@@ -13,4 +13,7 @@ export interface AvailabilityRepository {
 
     getSlots(clubId: number, courtId: number, date: string): Promise<Slot[] | undefined>;
     setSlots(clubId: number, courtId: number, date: string, slots: Slot[]): Promise<void>;
+
+    clearSlots(clubId: number, courtId: number, date: string): Promise<void>;
+    clearAll(): Promise<void>;
 }

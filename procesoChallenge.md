@@ -48,3 +48,14 @@ Para garantizar que nuestra refactorización y la caché no alteraron la estruct
 - Reiniciando el entorno para correr el test en un escenario "limpio", el test pasó perfectamente en **~9.39s**.
 
 Esto comprobó fehacientemente que la lógica de promesas en paralelo y Redis funcionan perfecto, dejando la mesa servida para el último paso: Sincronizar la caché en tiempo real consumiendo los Webhooks.
+
+### Sincronización en Tiempo Real (Eventos CQRS)
+
+Para solucionar el problema de los datos desactualizados (Stale Data) provocado por los eventos aleatorios del Mock Server, implementamos un mecanismo de invalidación de caché reactivo:
+- Añadimos los métodos `clearSlots` y `clearAll` a la interfaz y al repositorio de Redis.
+- Creamos el manejador `CacheInvalidationHandler` (`src/domain/handlers/cache-invalidation.handler.ts`) que se suscribe automáticamente a los eventos de dominio (`SlotBookedEvent`, `SlotAvailableEvent`, `ClubUpdatedEvent`).
+- Cuando un turno es reservado o cancelado, extraemos la fecha y borramos **únicamente** la clave específica de Redis de ese día para esa cancha en tiempo `O(1)`.
+- Cuando cambian los horarios de apertura (`openhours`) de un club, purgamos la caché completa de forma preventiva.
+
+**Resultado Final:**
+La API ahora es capaz de responder en milisegundos a las consultas frecuentes, pero si ocurre un cambio en el mundo real, la caché se invalida inmediatamente, garantizando consistencia absoluta (Eventual Consistency). Al correr la prueba E2E después de un rato, los datos empatan perfectamente.

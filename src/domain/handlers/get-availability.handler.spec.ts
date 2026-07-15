@@ -13,7 +13,17 @@ describe('GetAvailabilityHandler', () => {
 
   beforeEach(() => {
     client = new FakeAlquilaTuCanchaClient();
-    handler = new GetAvailabilityHandler(client);
+    const fakeRepo = {
+      getClubs: jest.fn().mockResolvedValue(undefined),
+      setClubs: jest.fn(),
+      getCourts: jest.fn().mockResolvedValue(undefined),
+      setCourts: jest.fn(),
+      getSlots: jest.fn().mockResolvedValue(undefined),
+      setSlots: jest.fn(),
+      clearSlots: jest.fn(),
+      clearAll: jest.fn(),
+    };
+    handler = new GetAvailabilityHandler(client, fakeRepo as any);
   });
 
   it('returns the availability', async () => {

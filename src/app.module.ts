@@ -1,4 +1,5 @@
 import { CacheModule, Module } from '@nestjs/common';
+// @ts-ignore
 import * as redisStore from 'cache-manager-redis-store';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
@@ -7,6 +8,7 @@ import { HttpModule } from '@nestjs/axios';
 
 import { GetAvailabilityHandler } from './domain/handlers/get-availability.handler';
 import { ClubUpdatedHandler } from './domain/handlers/club-updated.handler';
+import { CacheInvalidationHandler } from './domain/handlers/cache-invalidation.handler';
 import { AVAILABILITY_REPOSITORY } from './domain/ports/availability-repository';
 import { ALQUILA_TU_CANCHA_CLIENT } from './domain/ports/aquila-tu-cancha.client';
 import { HTTPAlquilaTuCanchaClient } from './infrastructure/clients/http-alquila-tu-cancha.client';
@@ -40,6 +42,7 @@ import { RedisAvailabilityRepository } from './infrastructure/repositories/redis
     },
     GetAvailabilityHandler,
     ClubUpdatedHandler,
+    CacheInvalidationHandler,
   ],
 })
 export class AppModule { }

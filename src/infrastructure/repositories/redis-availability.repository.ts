@@ -11,8 +11,8 @@ export class RedisAvailabilityRepository implements AvailabilityRepository {
     // 8 días de TTL en SEGUNDOS (versión 4)
     private readonly TTL = 8 * 24 * 60 * 60;
 
-    // Aquí usamos el CACHE_MANAGER oficial sin comillas
-    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) { }
+    // Aquí usamos el CACHE_MANAGER oficial
+    constructor(@Inject('CACHE_MANAGER') private cacheManager: Cache) { }
 
     async getClubs(placeId: string): Promise<Club[] | undefined> {
         return this.cacheManager.get<Club[]>(`clubs:${placeId}`);
@@ -36,5 +36,13 @@ export class RedisAvailabilityRepository implements AvailabilityRepository {
 
     async setSlots(clubId: number, courtId: number, date: string, slots: Slot[]): Promise<void> {
         await this.cacheManager.set(`slots:${clubId}:${courtId}:${date}`, slots, { ttl: this.TTL });
+    }
+
+    async clearSlots(clubId: number, courtId: number, date: string): Promise<void> {
+        await this.cacheManager.del(`slots:${clubId}:${courtId}:${date}`);
+    }
+
+    async clearAll(): Promise<void> {
+        await this.cacheManager.reset();
     }
 }
