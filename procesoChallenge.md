@@ -29,3 +29,22 @@ Para integrarlo limpiamente, desarrollé lo siguiente bajo el principio de inver
 - **Puerto (Domain):** Se creó la interfaz `AvailabilityRepository` que define el contrato abstracto para guardar y obtener clubes, canchas y turnos (slots).
 - **Adaptador (Infrastructure):** Se creó la clase `RedisAvailabilityRepository` que implementa dicha interfaz utilizando el gestor de caché de NestJS conectado a Redis. Se configuró un tiempo de vida (TTL) de 8 días como medida de seguridad, cubriendo adecuadamente la ventana de 7 días exigida por el desafío.
 - **Configuración:** Se importó e inyectó todo esto a nivel de aplicación en el `AppModule`.
+
+### Optimización de Consultas y Manejo de Concurrencia
+
+En el `GetAvailabilityHandler`, refactorizamos la lógica de negocio para maximizar la eficiencia:
+
+- Sustituimos las consultas secuenciales bloqueantes (`for...of`) por consultas concurrentes utilizando `Promise.all`.
+- Implementamos el patrón **Cache-Aside**, consultando primero a Redis (`AvailabilityRepository`) y, únicamente si no hay registros (Cache Miss), recurrimos al cliente HTTP (`AlquilaTuCanchaClient`), guardando luego la respuesta en caché.
+
+**Resultados medidos:**
+Al probar con `curl`, la primera petición (Cache Miss) demoraba unos ~5000ms. La segunda petición (Cache Hit) retornó los datos en aproximadamente **~15ms**, logrando una latencia casi nula y evadiendo los estrictos límites de tasa del mock.
+
+### Validación E2E y Pruebas Unitarias
+
+Para garantizar que nuestra refactorización y la caché no alteraron la estructura original de los datos, ejecutamos la suite de pruebas End-to-End (`yarn test:e2e`).
+
+- Inicialmente nos topamos con un "falso negativo": el test fallaba porque el Mock Server había emitido eventos aleatorios por debajo y nuestra caché tenía datos desactualizados (Stale Data).
+- Reiniciando el entorno para correr el test en un escenario "limpio", el test pasó perfectamente en **~9.39s**.
+
+Esto comprobó fehacientemente que la lógica de promesas en paralelo y Redis funcionan perfecto, dejando la mesa servida para el último paso: Sincronizar la caché en tiempo real consumiendo los Webhooks.

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 
 import { AvailabilityRepository } from '../../domain/ports/availability-repository';
@@ -8,16 +8,18 @@ import { Slot } from '../../domain/model/slot';
 
 @Injectable()
 export class RedisAvailabilityRepository implements AvailabilityRepository {
-    private readonly TTL = 8 * 24 * 60 * 60 * 1000;
+    // 8 días de TTL en SEGUNDOS (versión 4)
+    private readonly TTL = 8 * 24 * 60 * 60;
 
-    constructor(@Inject('CACHE_MANAGER') private cacheManager: Cache) { }
+    // Aquí usamos el CACHE_MANAGER oficial sin comillas
+    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) { }
 
     async getClubs(placeId: string): Promise<Club[] | undefined> {
         return this.cacheManager.get<Club[]>(`clubs:${placeId}`);
     }
 
     async setClubs(placeId: string, clubs: Club[]): Promise<void> {
-        await this.cacheManager.set(`clubs:${placeId}`, clubs, this.TTL);
+        await this.cacheManager.set(`clubs:${placeId}`, clubs, { ttl: this.TTL });
     }
 
     async getCourts(clubId: number): Promise<Court[] | undefined> {
@@ -25,7 +27,7 @@ export class RedisAvailabilityRepository implements AvailabilityRepository {
     }
 
     async setCourts(clubId: number, courts: Court[]): Promise<void> {
-        await this.cacheManager.set(`courts:${clubId}`, courts, this.TTL);
+        await this.cacheManager.set(`courts:${clubId}`, courts, { ttl: this.TTL });
     }
 
     async getSlots(clubId: number, courtId: number, date: string): Promise<Slot[] | undefined> {
@@ -33,6 +35,6 @@ export class RedisAvailabilityRepository implements AvailabilityRepository {
     }
 
     async setSlots(clubId: number, courtId: number, date: string, slots: Slot[]): Promise<void> {
-        await this.cacheManager.set(`slots:${clubId}:${courtId}:${date}`, slots, this.TTL);
+        await this.cacheManager.set(`slots:${clubId}:${courtId}:${date}`, slots, { ttl: this.TTL });
     }
 }

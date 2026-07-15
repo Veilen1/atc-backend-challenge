@@ -1,11 +1,9 @@
-import { CacheModule } from '@nestjs/cache-manager';
-import { Module } from '@nestjs/common';
+import { CacheModule, Module } from '@nestjs/common';
+import * as redisStore from 'cache-manager-redis-store';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { ScheduleModule } from '@nestjs/schedule';
-import { redisStore } from 'cache-manager-redis-yet';
 import { HttpModule } from '@nestjs/axios';
-
 
 import { GetAvailabilityHandler } from './domain/handlers/get-availability.handler';
 import { ClubUpdatedHandler } from './domain/handlers/club-updated.handler';
@@ -22,16 +20,12 @@ import { RedisAvailabilityRepository } from './infrastructure/repositories/redis
     ConfigModule.forRoot(),
     CqrsModule,
     ScheduleModule.forRoot(), // Permite crear tareas en segundo plano (Cron Jobs)
-    CacheModule.registerAsync({
-      useFactory: async () => ({
-        store: await redisStore({
-          socket: {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT || '6379', 10),
-          },
-        }),
-      }),
+    CacheModule.register({
+      store: redisStore,
+      host: 'redis', // Conecta al contenedor redis de docker-compose
+      port: 6379,
     }),
+
   ],
   controllers: [SearchController, EventsController],
   providers: [
